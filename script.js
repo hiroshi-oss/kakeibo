@@ -1,34 +1,62 @@
 const SUPABASE_URL = "https://nrhahsoxsdabqsdzexyk.supabase.co";
 const SUPABASE_KEY = "sb_publishable_szpBxayLcqMjZ2SlPnH-fA_cY8yoHjJ";
 
-const supabaseClient =
-    supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_KEY
-    );
+const supabaseClient = supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+);
 
 let records = [];
-let sortedRecords = [];
-let expenseChart;
+let fixedCosts = [];
 
-let selectedYear;
-let selectedMonth;
+let expenseChart;
+let monthlyChart;
 
 let now = new Date();
 
-selectedYear = now.getFullYear();
-selectedMonth = now.getMonth() + 1;
+let selectedYear = now.getFullYear();
+let selectedMonth = now.getMonth() + 1;
 
 
 function hideLoginArea() {
-    document
-        .getElementById("loginArea")
-        .style.display = "none";
+    const loginArea =
+        document.getElementById("loginArea");
+
+    if (loginArea) {
+        loginArea.style.display = "none";
+    }
+}
+
+
+function showLoginArea() {
+    const loginArea =
+        document.getElementById("loginArea");
+
+    if (loginArea) {
+        loginArea.style.display = "block";
+    }
+}
+
+
+async function getCurrentUser() {
+    const {
+        data: {
+            user
+        }
+    } =
+        await supabaseClient
+            .auth
+            .getUser();
+
+    return user;
 }
 
 
 async function loadSupabaseRecords() {
-    const { data, error } =
+    const {
+        data,
+        error
+    } =
         await supabaseClient
             .from("records")
             .select("*")
@@ -41,43 +69,90 @@ async function loadSupabaseRecords() {
 
     if (error) {
         console.log(
-            "読み込みエラー:",
+            "記録読み込みエラー:",
             error
         );
+
         return;
     }
 
     records = data || [];
 
-    sortedRecords =
-        records.map(
-            function(record, index) {
-                return {
-                    record: record,
-                    index: index
-                };
-            }
+    await showSelectedMonth();
+    updateMonthlyChart();
+}
+
+
+async function loadFixedCosts() {
+    const user =
+        await getCurrentUser();
+
+    if (!user) {
+        fixedCosts = [];
+
+        showFixedCosts();
+        updateMonthlyChart();
+
+        return;
+    }
+
+    const {
+        data,
+        error
+    } =
+        await supabaseClient
+            .from("fixed_costs")
+            .select("*")
+            .eq(
+                "user_id",
+                user.id
+            )
+            .order("created_at", {
+                ascending: false
+            });
+
+    if (error) {
+        console.log(
+            "固定費読み込みエラー:",
+            error
         );
 
-    await showSelectedMonth();
+        return;
+    }
+
+    fixedCosts = data || [];
+
+    showFixedCosts();
+    updateMonthlyChart();
 }
 
 
 async function addMoney() {
-    let item =
-        document.getElementById("item").value;
+    const item =
+        document
+            .getElementById("item")
+            .value
+            .trim();
 
-    let amount =
-        document.getElementById("amount").value;
+    const amount =
+        document
+            .getElementById("amount")
+            .value;
 
-    let type =
-        document.getElementById("type").value;
+    const type =
+        document
+            .getElementById("type")
+            .value;
 
-    let date =
-        document.getElementById("date").value;
+    const date =
+        document
+            .getElementById("date")
+            .value;
 
-    let category =
-        document.getElementById("category").value;
+    const category =
+        document
+            .getElementById("category")
+            .value;
 
     if (
         item === "" ||
@@ -87,32 +162,36 @@ async function addMoney() {
         alert(
             "項目・金額・日付を入力してください"
         );
+
+        return;
+    }
+
+    const user =
+        await getCurrentUser();
+
+    if (!user) {
+        alert(
+            "先にログインしてください"
+        );
+
         return;
     }
 
     const {
-        data: { user }
+        error
     } =
-        await supabaseClient.auth.getUser();
-
-    if (!user) {
-        alert("先にログインしてください");
-        return;
-    }
-
-    let record = {
-        item: item,
-        amount: Number(amount),
-        type: type,
-        date: date,
-        category: category,
-        user_id: user.id
-    };
-
-    const { error } =
         await supabaseClient
             .from("records")
-            .insert([record]);
+            .insert([
+                {
+                    item: item,
+                    amount: Number(amount),
+                    type: type,
+                    date: date,
+                    category: category,
+                    user_id: user.id
+                }
+            ]);
 
     if (error) {
         console.log(
@@ -120,7 +199,10 @@ async function addMoney() {
             error
         );
 
-        alert("保存に失敗しました");
+        alert(
+            "保存に失敗しました"
+        );
+
         return;
     }
 
@@ -136,16 +218,25 @@ async function addMoney() {
         .getElementById("type")
         .value = "expense";
 
+    document
+        .getElementById("item")
+        .focus();
+
     await loadSupabaseRecords();
 }
 
 
 async function deleteRecord(id) {
-    const { error } =
+    const {
+        error
+    } =
         await supabaseClient
             .from("records")
             .delete()
-            .eq("id", id);
+            .eq(
+                "id",
+                id
+            );
 
     if (error) {
         console.log(
@@ -153,7 +244,10 @@ async function deleteRecord(id) {
             error
         );
 
-        alert("削除に失敗しました");
+        alert(
+            "削除に失敗しました"
+        );
+
         return;
     }
 
@@ -161,13 +255,205 @@ async function deleteRecord(id) {
 }
 
 
-async function saveBudget() {
-    let budget =
+async function addFixedCost() {
+    const item =
+        document
+            .getElementById("fixedCostItem")
+            .value
+            .trim();
+
+    const amount =
         Number(
             document
-                .getElementById(
-                    "budget"
-                )
+                .getElementById("fixedCostAmount")
+                .value
+        );
+
+    const category =
+        document
+            .getElementById("fixedCostCategory")
+            .value;
+
+    if (
+        item === "" ||
+        amount <= 0
+    ) {
+        alert(
+            "固定費の名前と金額を入力してください"
+        );
+
+        return;
+    }
+
+    const user =
+        await getCurrentUser();
+
+    if (!user) {
+        alert(
+            "先にログインしてください"
+        );
+
+        return;
+    }
+
+    const {
+        error
+    } =
+        await supabaseClient
+            .from("fixed_costs")
+            .insert([
+                {
+                    item: item,
+                    amount: amount,
+                    category: category,
+                    user_id: user.id
+                }
+            ]);
+
+    if (error) {
+        console.log(
+            "固定費保存エラー:",
+            error
+        );
+
+        alert(
+            "固定費の保存に失敗しました"
+        );
+
+        return;
+    }
+
+    document
+        .getElementById("fixedCostItem")
+        .value = "";
+
+    document
+        .getElementById("fixedCostAmount")
+        .value = "";
+
+    await loadFixedCosts();
+    await showSelectedMonth();
+}
+
+
+async function deleteFixedCost(id) {
+    const {
+        error
+    } =
+        await supabaseClient
+            .from("fixed_costs")
+            .delete()
+            .eq(
+                "id",
+                id
+            );
+
+    if (error) {
+        console.log(
+            "固定費削除エラー:",
+            error
+        );
+
+        alert(
+            "固定費の削除に失敗しました"
+        );
+
+        return;
+    }
+
+    await loadFixedCosts();
+    await showSelectedMonth();
+}
+
+
+function showFixedCosts() {
+    const list =
+        document.getElementById(
+            "fixedCostList"
+        );
+
+    const summary =
+        document.getElementById(
+            "fixedCostSummary"
+        );
+
+    list.innerHTML = "";
+
+    let total = 0;
+
+    if (fixedCosts.length === 0) {
+        const li =
+            document.createElement("li");
+
+        li.textContent =
+            "固定費はまだ登録されていません";
+
+        list.appendChild(li);
+
+        summary.textContent =
+            "固定費合計：0円";
+
+        return;
+    }
+
+    fixedCosts.forEach(
+        function(fixedCost) {
+            total +=
+                Number(
+                    fixedCost.amount
+                );
+
+            const li =
+                document.createElement("li");
+
+            li.textContent =
+                fixedCost.item +
+                "：" +
+                Number(
+                    fixedCost.amount
+                ).toLocaleString() +
+                "円（" +
+                (
+                    fixedCost.category ||
+                    "その他"
+                ) +
+                "）";
+
+            const deleteButton =
+                document.createElement(
+                    "button"
+                );
+
+            deleteButton.textContent =
+                "削除";
+
+            deleteButton.onclick =
+                async function() {
+                    await deleteFixedCost(
+                        fixedCost.id
+                    );
+                };
+
+            li.appendChild(
+                deleteButton
+            );
+
+            list.appendChild(li);
+        }
+    );
+
+    summary.textContent =
+        "固定費合計：" +
+        total.toLocaleString() +
+        "円";
+}
+
+
+async function saveBudget() {
+    const budget =
+        Number(
+            document
+                .getElementById("budget")
                 .value
         );
 
@@ -175,16 +461,18 @@ async function saveBudget() {
         alert(
             "予算を入力してください"
         );
+
         return;
     }
 
-    const {
-        data: { user }
-    } =
-        await supabaseClient.auth.getUser();
+    const user =
+        await getCurrentUser();
 
     if (!user) {
-        alert("先にログインしてください");
+        alert(
+            "先にログインしてください"
+        );
+
         return;
     }
 
@@ -195,9 +483,18 @@ async function saveBudget() {
         await supabaseClient
             .from("budgets")
             .select("*")
-            .eq("user_id", user.id)
-            .eq("year", selectedYear)
-            .eq("month", selectedMonth)
+            .eq(
+                "user_id",
+                user.id
+            )
+            .eq(
+                "year",
+                selectedYear
+            )
+            .eq(
+                "month",
+                selectedMonth
+            )
             .maybeSingle();
 
     if (selectError) {
@@ -209,11 +506,14 @@ async function saveBudget() {
         alert(
             "予算の確認に失敗しました"
         );
+
         return;
     }
 
     if (existingBudget) {
-        const { error } =
+        const {
+            error
+        } =
             await supabaseClient
                 .from("budgets")
                 .update({
@@ -233,18 +533,23 @@ async function saveBudget() {
             alert(
                 "予算の更新に失敗しました"
             );
+
             return;
         }
     } else {
-        const { error } =
+        const {
+            error
+        } =
             await supabaseClient
                 .from("budgets")
-                .insert([{
-                    user_id: user.id,
-                    year: selectedYear,
-                    month: selectedMonth,
-                    budget: budget
-                }]);
+                .insert([
+                    {
+                        user_id: user.id,
+                        year: selectedYear,
+                        month: selectedMonth,
+                        budget: budget
+                    }
+                ]);
 
         if (error) {
             console.log(
@@ -255,6 +560,7 @@ async function saveBudget() {
             alert(
                 "予算の保存に失敗しました"
             );
+
             return;
         }
     }
@@ -266,24 +572,18 @@ async function saveBudget() {
 async function showBudget(
     monthExpense
 ) {
-    const {
-        data: { user }
-    } =
-        await supabaseClient.auth.getUser();
+    const user =
+        await getCurrentUser();
 
-    let budgetInput =
+    const budgetInput =
         document.getElementById(
             "budget"
         );
 
-    let budgetResult =
+    const budgetResult =
         document.getElementById(
             "budgetResult"
         );
-
-    if (!budgetResult) {
-        return;
-    }
 
     if (!user) {
         budgetInput.value = "";
@@ -301,9 +601,18 @@ async function showBudget(
         await supabaseClient
             .from("budgets")
             .select("budget")
-            .eq("user_id", user.id)
-            .eq("year", selectedYear)
-            .eq("month", selectedMonth)
+            .eq(
+                "user_id",
+                user.id
+            )
+            .eq(
+                "year",
+                selectedYear
+            )
+            .eq(
+                "month",
+                selectedMonth
+            )
             .maybeSingle();
 
     if (error) {
@@ -318,9 +627,11 @@ async function showBudget(
         return;
     }
 
-    let budget =
+    const budget =
         data
-            ? Number(data.budget)
+            ? Number(
+                data.budget
+            )
             : 0;
 
     budgetInput.value =
@@ -335,8 +646,9 @@ async function showBudget(
         return;
     }
 
-    let remaining =
-        budget - monthExpense;
+    const remaining =
+        budget -
+        monthExpense;
 
     if (remaining >= 0) {
         budgetResult.textContent =
@@ -358,30 +670,34 @@ async function showBudget(
 }
 
 
-function showRecord(
-    record,
-    index
-) {
+function showRecord(record) {
     let displayDate = "";
 
     if (record.date) {
-        let dateParts =
+        const dateParts =
             record.date.split("-");
 
         displayDate =
-            Number(dateParts[1]) +
+            Number(
+                dateParts[1]
+            ) +
             "月" +
-            Number(dateParts[2]) +
+            Number(
+                dateParts[2]
+            ) +
             "日";
     }
 
-    let li =
-        document.createElement(
-            "li"
-        );
+    const li =
+        document.createElement("li");
 
-    if (record.type === "income") {
-        li.classList.add("income");
+    if (
+        record.type ===
+        "income"
+    ) {
+        li.classList.add(
+            "income"
+        );
 
         li.textContent =
             displayDate +
@@ -398,7 +714,9 @@ function showRecord(
             ) +
             "）";
     } else {
-        li.classList.add("expense");
+        li.classList.add(
+            "expense"
+        );
 
         li.textContent =
             displayDate +
@@ -416,7 +734,7 @@ function showRecord(
             "）";
     }
 
-    let deleteButton =
+    const deleteButton =
         document.createElement(
             "button"
         );
@@ -444,7 +762,7 @@ function showRecord(
 function updateChart(
     categoryTotals
 ) {
-    let canvas =
+    const canvas =
         document.getElementById(
             "expenseChart"
         );
@@ -472,23 +790,188 @@ function updateChart(
                         "その他"
                     ],
 
-                    datasets: [{
-                        data: [
-                            categoryTotals["食費"],
-                            categoryTotals["交通費"],
-                            categoryTotals["日用品"],
-                            categoryTotals["娯楽"],
-                            categoryTotals["その他"]
-                        ],
+                    datasets: [
+                        {
+                            data: [
+                                categoryTotals[
+                                    "食費"
+                                ],
+                                categoryTotals[
+                                    "交通費"
+                                ],
+                                categoryTotals[
+                                    "日用品"
+                                ],
+                                categoryTotals[
+                                    "娯楽"
+                                ],
+                                categoryTotals[
+                                    "その他"
+                                ]
+                            ],
 
-                        backgroundColor: [
-                            "#ff6384",
-                            "#36a2eb",
-                            "#ffcd56",
-                            "#4bc0c0",
-                            "#9966ff"
-                        ]
-                    }]
+                            backgroundColor: [
+                                "#ff6384",
+                                "#36a2eb",
+                                "#ffcd56",
+                                "#4bc0c0",
+                                "#9966ff"
+                            ]
+                        }
+                    ]
+                }
+            }
+        );
+}
+
+
+function updateMonthlyChart() {
+    const canvas =
+        document.getElementById(
+            "monthlyChart"
+        );
+
+    if (!canvas) {
+        return;
+    }
+
+    const monthlyData = {};
+
+    records.forEach(
+        function(record) {
+            if (!record.date) {
+                return;
+            }
+
+            const monthKey =
+                record.date.substring(
+                    0,
+                    7
+                );
+
+            if (!monthlyData[monthKey]) {
+                monthlyData[monthKey] = {
+                    income: 0,
+                    expense: 0
+                };
+            }
+
+            if (
+                record.type ===
+                "income"
+            ) {
+                monthlyData[
+                    monthKey
+                ].income +=
+                    Number(
+                        record.amount
+                    );
+            } else {
+                monthlyData[
+                    monthKey
+                ].expense +=
+                    Number(
+                        record.amount
+                    );
+            }
+        }
+    );
+
+    const months =
+        Object.keys(
+            monthlyData
+        ).sort();
+
+    months.forEach(
+        function(monthKey) {
+            fixedCosts.forEach(
+                function(fixedCost) {
+                    monthlyData[
+                        monthKey
+                    ].expense +=
+                        Number(
+                            fixedCost.amount
+                        );
+                }
+            );
+        }
+    );
+
+    const labels =
+        months.map(
+            function(monthKey) {
+                const parts =
+                    monthKey.split("-");
+
+                return (
+                    Number(
+                        parts[0]
+                    ) +
+                    "年" +
+                    Number(
+                        parts[1]
+                    ) +
+                    "月"
+                );
+            }
+        );
+
+    const incomeData =
+        months.map(
+            function(monthKey) {
+                return monthlyData[
+                    monthKey
+                ].income;
+            }
+        );
+
+    const expenseData =
+        months.map(
+            function(monthKey) {
+                return monthlyData[
+                    monthKey
+                ].expense;
+            }
+        );
+
+    if (monthlyChart) {
+        monthlyChart.destroy();
+    }
+
+    monthlyChart =
+        new Chart(
+            canvas,
+            {
+                type: "bar",
+
+                data: {
+                    labels: labels,
+
+                    datasets: [
+                        {
+                            label: "収入",
+                            data: incomeData,
+                            backgroundColor:
+                                "#4caf50"
+                        },
+                        {
+                            label: "支出",
+                            data: expenseData,
+                            backgroundColor:
+                                "#f44336"
+                        }
+                    ]
+                },
+
+                options: {
+                    responsive: true,
+
+                    scales: {
+                        y: {
+                            beginAtZero:
+                                true
+                        }
+                    }
                 }
             }
         );
@@ -496,7 +979,7 @@ function updateChart(
 
 
 async function showSelectedMonth() {
-    let monthText =
+    const monthText =
         selectedYear +
         "-" +
         String(
@@ -516,15 +999,18 @@ async function showSelectedMonth() {
         selectedMonth +
         "月";
 
-    document
-        .getElementById("list")
-        .innerHTML = "";
+    const list =
+        document.getElementById(
+            "list"
+        );
+
+    list.innerHTML = "";
 
     let monthIncome = 0;
     let monthExpense = 0;
     let recordCount = 0;
 
-    let categoryTotals = {
+    const categoryTotals = {
         "食費": 0,
         "交通費": 0,
         "日用品": 0,
@@ -532,37 +1018,34 @@ async function showSelectedMonth() {
         "その他": 0
     };
 
-    sortedRecords.forEach(
-        function(item) {
+    records.forEach(
+        function(record) {
             if (
-                item.record.date &&
-                item.record.date.startsWith(
+                record.date &&
+                record.date.startsWith(
                     monthText
                 )
             ) {
-                showRecord(
-                    item.record,
-                    item.index
-                );
+                showRecord(record);
 
                 recordCount++;
 
                 if (
-                    item.record.type ===
+                    record.type ===
                     "income"
                 ) {
                     monthIncome +=
                         Number(
-                            item.record.amount
+                            record.amount
                         );
                 } else {
                     monthExpense +=
                         Number(
-                            item.record.amount
+                            record.amount
                         );
 
                     let category =
-                        item.record.category ||
+                        record.category ||
                         "その他";
 
                     if (
@@ -578,15 +1061,47 @@ async function showSelectedMonth() {
                         category
                     ] +=
                         Number(
-                            item.record.amount
+                            record.amount
                         );
                 }
             }
         }
     );
 
-    if (recordCount === 0) {
-        let li =
+    fixedCosts.forEach(
+        function(fixedCost) {
+            monthExpense +=
+                Number(
+                    fixedCost.amount
+                );
+
+            let category =
+                fixedCost.category ||
+                "その他";
+
+            if (
+                categoryTotals[
+                    category
+                ] === undefined
+            ) {
+                category =
+                    "その他";
+            }
+
+            categoryTotals[
+                category
+            ] +=
+                Number(
+                    fixedCost.amount
+                );
+        }
+    );
+
+    if (
+        recordCount ===
+        0
+    ) {
+        const li =
             document.createElement(
                 "li"
             );
@@ -594,14 +1109,10 @@ async function showSelectedMonth() {
         li.textContent =
             "この月の記録はありません";
 
-        document
-            .getElementById(
-                "list"
-            )
-            .appendChild(li);
+        list.appendChild(li);
     }
 
-    let monthBalance =
+    const monthBalance =
         monthIncome -
         monthExpense;
 
@@ -632,7 +1143,7 @@ async function showSelectedMonth() {
         monthBalance.toLocaleString() +
         "円";
 
-    let categorySummary =
+    const categorySummary =
         document.getElementById(
             "categorySummary"
         );
@@ -640,10 +1151,10 @@ async function showSelectedMonth() {
     categorySummary.innerHTML = "";
 
     for (
-        let category
+        const category
         in categoryTotals
     ) {
-        let p =
+        const p =
             document.createElement(
                 "p"
             );
@@ -656,8 +1167,9 @@ async function showSelectedMonth() {
             ].toLocaleString() +
             "円";
 
-        categorySummary
-            .appendChild(p);
+        categorySummary.appendChild(
+            p
+        );
     }
 
     await showBudget(
@@ -675,7 +1187,10 @@ document
     .addEventListener(
         "keydown",
         function(event) {
-            if (event.key === "Enter") {
+            if (
+                event.key ===
+                "Enter"
+            ) {
                 document
                     .getElementById(
                         "amount"
@@ -691,7 +1206,10 @@ document
     .addEventListener(
         "keydown",
         function(event) {
-            if (event.key === "Enter") {
+            if (
+                event.key ===
+                "Enter"
+            ) {
                 document
                     .getElementById(
                         "category"
@@ -707,7 +1225,10 @@ document
     .addEventListener(
         "keydown",
         function(event) {
-            if (event.key === "Enter") {
+            if (
+                event.key ===
+                "Enter"
+            ) {
                 document
                     .getElementById(
                         "type"
@@ -723,7 +1244,10 @@ document
     .addEventListener(
         "keydown",
         function(event) {
-            if (event.key === "Enter") {
+            if (
+                event.key ===
+                "Enter"
+            ) {
                 addMoney();
             }
         }
@@ -742,6 +1266,16 @@ document
 
 document
     .getElementById(
+        "addFixedCostButton"
+    )
+    .addEventListener(
+        "click",
+        addFixedCost
+    );
+
+
+document
+    .getElementById(
         "prevMonthButton"
     )
     .addEventListener(
@@ -749,8 +1283,13 @@ document
         async function() {
             selectedMonth--;
 
-            if (selectedMonth === 0) {
-                selectedMonth = 12;
+            if (
+                selectedMonth ===
+                0
+            ) {
+                selectedMonth =
+                    12;
+
                 selectedYear--;
             }
 
@@ -768,8 +1307,13 @@ document
         async function() {
             selectedMonth++;
 
-            if (selectedMonth === 13) {
-                selectedMonth = 1;
+            if (
+                selectedMonth ===
+                13
+            ) {
+                selectedMonth =
+                    1;
+
                 selectedYear++;
             }
 
@@ -785,17 +1329,36 @@ document
     .addEventListener(
         "click",
         function() {
-            document
-                .getElementById(
+            const list =
+                document.getElementById(
                     "list"
-                )
-                .innerHTML = "";
+                );
 
-            sortedRecords.forEach(
-                function(item) {
+            list.innerHTML = "";
+
+            if (
+                records.length ===
+                0
+            ) {
+                const li =
+                    document.createElement(
+                        "li"
+                    );
+
+                li.textContent =
+                    "記録はありません";
+
+                list.appendChild(
+                    li
+                );
+
+                return;
+            }
+
+            records.forEach(
+                function(record) {
                     showRecord(
-                        item.record,
-                        item.index
+                        record
                     );
                 }
             );
@@ -810,14 +1373,14 @@ document
     .addEventListener(
         "click",
         async function() {
-            let email =
+            const email =
                 document
                     .getElementById(
                         "loginEmail"
                     )
                     .value;
 
-            let password =
+            const password =
                 document
                     .getElementById(
                         "loginPassword"
@@ -829,12 +1392,14 @@ document
             } =
                 await supabaseClient
                     .auth
-                    .signInWithPassword({
-                        email: email,
-                        password: password
-                    });
+                    .signInWithPassword(
+                        {
+                            email: email,
+                            password: password
+                        }
+                    );
 
-            let loginStatus =
+            const loginStatus =
                 document.getElementById(
                     "loginStatus"
                 );
@@ -846,8 +1411,11 @@ document
                 return;
             }
 
+            loginStatus.textContent = "";
+
             hideLoginArea();
 
+            await loadFixedCosts();
             await loadSupabaseRecords();
         }
     );
@@ -855,19 +1423,13 @@ document
 
 window.onload =
     async function() {
-        document
-            .getElementById(
-                "item"
-            )
-            .focus();
-
-        let today =
+        const today =
             new Date();
 
-        let year =
+        const year =
             today.getFullYear();
 
-        let month =
+        const month =
             String(
                 today.getMonth() + 1
             ).padStart(
@@ -875,7 +1437,7 @@ window.onload =
                 "0"
             );
 
-        let day =
+        const day =
             String(
                 today.getDate()
             ).padStart(
@@ -906,8 +1468,15 @@ window.onload =
         if (session) {
             hideLoginArea();
 
+            await loadFixedCosts();
             await loadSupabaseRecords();
         } else {
+            showLoginArea();
+
+            showFixedCosts();
+
             await showSelectedMonth();
+
+            updateMonthlyChart();
         }
     };

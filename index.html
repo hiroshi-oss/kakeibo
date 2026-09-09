@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html>
-
 <head>
     <meta charset="UTF-8">
     <title>家計簿</title>
@@ -8,60 +7,74 @@
 </head>
 
 <body>
-<div id="loginArea">
-    <input
-        id="loginEmail"
-        type="email"
-        placeholder="メールアドレス"
-    >
 
-    <input
-        id="loginPassword"
-        type="password"
-        placeholder="パスワード"
-    >
+    <div id="loginArea">
+        <input
+            id="loginEmail"
+            type="email"
+            placeholder="メールアドレス"
+        >
 
-    <button id="loginButton">
-        ログイン
-    </button>
+        <input
+            id="loginPassword"
+            type="password"
+            placeholder="パスワード"
+        >
 
-    <p id="loginStatus"></p>
-</div>
+        <button id="loginButton">
+            ログイン
+        </button>
+
+        <p id="loginStatus"></p>
+    </div>
+
+
     <h1>家計簿</h1>
 
-    <input
-        id="item"
-        type="text"
-        placeholder="何に使った？"
-    >
 
-    <input
-        id="amount"
-        type="number"
-        placeholder="金額"
-    >
+    <div class="input-area">
 
-    <input
-        id="date"
-        type="date"
-    >
+        <input
+            id="item"
+            type="text"
+            placeholder="何に使った？"
+        >
 
-    <select id="category">
-        <option value="食費">食費</option>
-        <option value="交通費">交通費</option>
-        <option value="日用品">日用品</option>
-        <option value="娯楽">娯楽</option>
-        <option value="その他">その他</option>
-    </select>
+        <input
+            id="amount"
+            type="number"
+            placeholder="金額"
+        >
 
-    <select id="type">
-        <option value="expense">支出</option>
-        <option value="income">収入</option>
-    </select>
+        <input
+            id="date"
+            type="date"
+        >
 
-    <button onclick="addMoney()">登録</button>
+        <select id="category">
+            <option value="食費">食費</option>
+            <option value="交通費">交通費</option>
+            <option value="日用品">日用品</option>
+            <option value="娯楽">娯楽</option>
+            <option value="その他">その他</option>
+        </select>
+
+        <select id="type">
+            <option value="expense">支出</option>
+            <option value="income">収入</option>
+        </select>
+
+        <button onclick="addMoney()">
+            登録
+        </button>
+
+    </div>
+
 
     <div class="budget-area">
+
+        <h2>今月の予算</h2>
+
         <input
             id="budget"
             type="number"
@@ -73,38 +86,100 @@
         </button>
 
         <p id="budgetResult"></p>
+
     </div>
 
-    <ul id="list"></ul>
+
+    <div class="fixed-cost-area">
+
+        <h2>固定費</h2>
+
+        <input
+            id="fixedCostItem"
+            type="text"
+            placeholder="例：家賃"
+        >
+
+        <input
+            id="fixedCostAmount"
+            type="number"
+            placeholder="金額"
+        >
+
+        <select id="fixedCostCategory">
+            <option value="食費">食費</option>
+            <option value="交通費">交通費</option>
+            <option value="日用品">日用品</option>
+            <option value="娯楽">娯楽</option>
+            <option value="その他">その他</option>
+        </select>
+
+        <button id="addFixedCostButton">
+            固定費を登録
+        </button>
+
+        <div id="fixedCostSummary"></div>
+
+        <ul id="fixedCostList"></ul>
+
+    </div>
+
 
     <div class="month-controls">
-        <button id="prevMonthButton">← 前月</button>
+
+        <button id="prevMonthButton">
+            ← 前月
+        </button>
 
         <span id="currentMonthLabel"></span>
 
-        <button id="nextMonthButton">次月 →</button>
+        <button id="nextMonthButton">
+            次月 →
+        </button>
 
-        <button id="showAllButton">すべて表示</button>
+        <button id="showAllButton">
+            すべて表示
+        </button>
+
     </div>
+
+
+    <h2>記録</h2>
+
+    <ul id="list"></ul>
+
 
     <h2>カテゴリー別支出</h2>
 
     <div id="categorySummary"></div>
 
+
     <h2>支出の割合</h2>
 
     <canvas id="expenseChart"></canvas>
 
+
+    <h2>月ごとの収支</h2>
+
+    <canvas id="monthlyChart"></canvas>
+
+
     <div class="summary">
+
         <p id="incomeResult"></p>
+
         <p id="expenseResult"></p>
+
         <p id="balanceResult"></p>
+
     </div>
 
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <script src="script.js"></script>
 
 </body>
-
 </html>
