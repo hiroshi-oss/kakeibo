@@ -1,0 +1,148 @@
+body {
+    background-color: #f3f4f6;
+    font-family: sans-serif;
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 30px;
+    color: #222222;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+h2 {
+    margin-top: 30px;
+}
+
+input,
+select,
+button {
+    border: 1px solid #cccccc;
+    border-radius: 8px;
+    font-size: 16px;
+    padding: 10px;
+    margin: 5px;
+}
+
+input,
+select {
+    background-color: white;
+}
+
+button {
+    background-color: white;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #eeeeee;
+}
+
+.budget-area {
+    background-color: white;
+    padding: 15px;
+    margin: 20px 0;
+    border-radius: 10px;
+}
+
+#budgetResult {
+    margin: 10px 5px 0;
+    font-weight: bold;
+}
+
+.month-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+#currentMonthLabel {
+    font-size: 20px;
+    font-weight: bold;
+    min-width: 110px;
+    text-align: center;
+}
+
+#list {
+    padding: 0;
+}
+
+#list li {
+    list-style: none;
+    background-color: white;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#list li.income {
+    border-left: 5px solid green;
+}
+
+#list li.expense {
+    border-left: 5px solid red;
+}
+
+#categorySummary p {
+    background-color: white;
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 8px;
+}
+
+.summary {
+    display: flex;
+    gap: 10px;
+    margin-top: 30px;
+}
+
+.summary p {
+    flex: 1;
+    background-color: white;
+    padding: 15px;
+    border-radius: 8px;
+    font-size: 18px;
+}
+
+#incomeResult {
+    border-left: 5px solid green;
+}
+
+#expenseResult {
+    border-left: 5px solid red;
+}
+
+#balanceResult {
+    border-left: 5px solid blue;
+}
+
+#expenseChart {
+    display: block;
+    max-width: 400px;
+    max-height: 400px;
+    margin: 20px auto;
+}
+
+@media (max-width: 600px) {
+    body {
+        padding: 15px;
+    }
+
+    .summary {
+        flex-direction: column;
+    }
+
+    input,
+    select,
+    button {
+        box-sizing: border-box;
+    }
+}

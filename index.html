@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>家計簿</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <h1>家計簿</h1>
+
+    <input
+        id="item"
+        type="text"
+        placeholder="何に使った？"
+    >
+
+    <input
+        id="amount"
+        type="number"
+        placeholder="金額"
+    >
+
+    <input
+        id="date"
+        type="date"
+    >
+
+    <select id="category">
+        <option value="食費">食費</option>
+        <option value="交通費">交通費</option>
+        <option value="日用品">日用品</option>
+        <option value="娯楽">娯楽</option>
+        <option value="その他">その他</option>
+    </select>
+
+    <select id="type">
+        <option value="expense">支出</option>
+        <option value="income">収入</option>
+    </select>
+
+    <button onclick="addMoney()">登録</button>
+
+    <div class="budget-area">
+        <input
+            id="budget"
+            type="number"
+            placeholder="今月の予算"
+        >
+
+        <button id="saveBudgetButton">
+            予算を保存
+        </button>
+
+        <p id="budgetResult"></p>
+    </div>
+
+    <ul id="list"></ul>
+
+    <div class="month-controls">
+        <button id="prevMonthButton">← 前月</button>
+
+        <span id="currentMonthLabel"></span>
+
+        <button id="nextMonthButton">次月 →</button>
+
+        <button id="showAllButton">すべて表示</button>
+    </div>
+
+    <h2>カテゴリー別支出</h2>
+
+    <div id="categorySummary"></div>
+
+    <h2>支出の割合</h2>
+
+    <canvas id="expenseChart"></canvas>
+
+    <div class="summary">
+        <p id="incomeResult"></p>
+        <p id="expenseResult"></p>
+        <p id="balanceResult"></p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="script.js"></script>
+
+</body>
+
+</html>
