@@ -20,6 +20,13 @@ selectedYear = now.getFullYear();
 selectedMonth = now.getMonth() + 1;
 
 
+function hideLoginArea() {
+    document
+        .getElementById("loginArea")
+        .style.display = "none";
+}
+
+
 async function loadSupabaseRecords() {
     const { data, error } =
         await supabaseClient
@@ -52,7 +59,7 @@ async function loadSupabaseRecords() {
             }
         );
 
-    showSelectedMonth();
+    await showSelectedMonth();
 }
 
 
@@ -373,12 +380,8 @@ function showRecord(
             "li"
         );
 
-    if (
-        record.type === "income"
-    ) {
-        li.classList.add(
-            "income"
-        );
+    if (record.type === "income") {
+        li.classList.add("income");
 
         li.textContent =
             displayDate +
@@ -395,9 +398,7 @@ function showRecord(
             ) +
             "）";
     } else {
-        li.classList.add(
-            "expense"
-        );
+        li.classList.add("expense");
 
         li.textContent =
             displayDate +
@@ -473,21 +474,11 @@ function updateChart(
 
                     datasets: [{
                         data: [
-                            categoryTotals[
-                                "食費"
-                            ],
-                            categoryTotals[
-                                "交通費"
-                            ],
-                            categoryTotals[
-                                "日用品"
-                            ],
-                            categoryTotals[
-                                "娯楽"
-                            ],
-                            categoryTotals[
-                                "その他"
-                            ]
+                            categoryTotals["食費"],
+                            categoryTotals["交通費"],
+                            categoryTotals["日用品"],
+                            categoryTotals["娯楽"],
+                            categoryTotals["その他"]
                         ],
 
                         backgroundColor: [
@@ -646,8 +637,7 @@ async function showSelectedMonth() {
             "categorySummary"
         );
 
-    categorySummary.innerHTML =
-        "";
+    categorySummary.innerHTML = "";
 
     for (
         let category
@@ -685,10 +675,7 @@ document
     .addEventListener(
         "keydown",
         function(event) {
-            if (
-                event.key ===
-                "Enter"
-            ) {
+            if (event.key === "Enter") {
                 document
                     .getElementById(
                         "amount"
@@ -704,10 +691,7 @@ document
     .addEventListener(
         "keydown",
         function(event) {
-            if (
-                event.key ===
-                "Enter"
-            ) {
+            if (event.key === "Enter") {
                 document
                     .getElementById(
                         "category"
@@ -723,10 +707,7 @@ document
     .addEventListener(
         "keydown",
         function(event) {
-            if (
-                event.key ===
-                "Enter"
-            ) {
+            if (event.key === "Enter") {
                 document
                     .getElementById(
                         "type"
@@ -742,10 +723,7 @@ document
     .addEventListener(
         "keydown",
         function(event) {
-            if (
-                event.key ===
-                "Enter"
-            ) {
+            if (event.key === "Enter") {
                 addMoney();
             }
         }
@@ -771,9 +749,7 @@ document
         async function() {
             selectedMonth--;
 
-            if (
-                selectedMonth === 0
-            ) {
+            if (selectedMonth === 0) {
                 selectedMonth = 12;
                 selectedYear--;
             }
@@ -792,9 +768,7 @@ document
         async function() {
             selectedMonth++;
 
-            if (
-                selectedMonth === 13
-            ) {
+            if (selectedMonth === 13) {
                 selectedMonth = 1;
                 selectedYear++;
             }
@@ -872,8 +846,7 @@ document
                 return;
             }
 
-            loginStatus.textContent =
-                "ログインしました";
+            hideLoginArea();
 
             await loadSupabaseRecords();
         }
@@ -931,12 +904,7 @@ window.onload =
                 .getSession();
 
         if (session) {
-            document
-                .getElementById(
-                    "loginStatus"
-                )
-                .textContent =
-                "ログイン済み";
+            hideLoginArea();
 
             await loadSupabaseRecords();
         } else {
