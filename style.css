@@ -40,7 +40,8 @@ button:hover {
     background-color: #eeeeee;
 }
 
-.budget-area {
+.budget-area,
+.fixed-cost-area {
     background-color: white;
     padding: 15px;
     margin: 20px 0;
@@ -50,6 +51,21 @@ button:hover {
 #budgetResult {
     margin: 10px 5px 0;
     font-weight: bold;
+}
+
+#fixedCostList {
+    padding: 0;
+}
+
+#fixedCostList li {
+    list-style: none;
+    background-color: #f8f8f8;
+    padding: 10px;
+    margin-top: 8px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .month-controls {
@@ -126,9 +142,17 @@ button:hover {
 
 #expenseChart {
     display: block;
+    width: 100% !important;
     max-width: 400px;
-    max-height: 400px;
+    height: 400px !important;
     margin: 20px auto;
+}
+
+#monthlyChart {
+    display: block;
+    width: 100% !important;
+    height: 320px !important;
+    margin: 20px auto 30px;
 }
 
 @media (max-width: 600px) {
@@ -144,5 +168,9 @@ button:hover {
     select,
     button {
         box-sizing: border-box;
+    }
+
+    #monthlyChart {
+        height: 280px !important;
     }
 }
