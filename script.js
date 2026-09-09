@@ -154,23 +154,7 @@ async function deleteRecord(id) {
 }
 
 
-function getBudgetKey(
-    year,
-    month
-) {
-    return (
-        "budget-" +
-        year +
-        "-" +
-        String(month).padStart(
-            2,
-            "0"
-        )
-    );
-}
-
-
-function saveBudget() {
+async function saveBudget() {
     let budget =
         Number(
             document
@@ -187,46 +171,103 @@ function saveBudget() {
         return;
     }
 
-    let budgetKey =
-        getBudgetKey(
-            selectedYear,
-            selectedMonth
+    const {
+        data: { user }
+    } =
+        await supabaseClient.auth.getUser();
+
+    if (!user) {
+        alert("先にログインしてください");
+        return;
+    }
+
+    const {
+        data: existingBudget,
+        error: selectError
+    } =
+        await supabaseClient
+            .from("budgets")
+            .select("*")
+            .eq("user_id", user.id)
+            .eq("year", selectedYear)
+            .eq("month", selectedMonth)
+            .maybeSingle();
+
+    if (selectError) {
+        console.log(
+            "予算確認エラー:",
+            selectError
         );
 
-    localStorage.setItem(
-        budgetKey,
-        budget
-    );
+        alert(
+            "予算の確認に失敗しました"
+        );
+        return;
+    }
 
-    showSelectedMonth();
+    if (existingBudget) {
+        const { error } =
+            await supabaseClient
+                .from("budgets")
+                .update({
+                    budget: budget
+                })
+                .eq(
+                    "id",
+                    existingBudget.id
+                );
+
+        if (error) {
+            console.log(
+                "予算更新エラー:",
+                error
+            );
+
+            alert(
+                "予算の更新に失敗しました"
+            );
+            return;
+        }
+    } else {
+        const { error } =
+            await supabaseClient
+                .from("budgets")
+                .insert([{
+                    user_id: user.id,
+                    year: selectedYear,
+                    month: selectedMonth,
+                    budget: budget
+                }]);
+
+        if (error) {
+            console.log(
+                "予算保存エラー:",
+                error
+            );
+
+            alert(
+                "予算の保存に失敗しました"
+            );
+            return;
+        }
+    }
+
+    await showSelectedMonth();
 }
 
 
-function showBudget(
+async function showBudget(
     monthExpense
 ) {
-    let budgetKey =
-        getBudgetKey(
-            selectedYear,
-            selectedMonth
-        );
-
-    let budget =
-        Number(
-            localStorage.getItem(
-                budgetKey
-            )
-        ) || 0;
+    const {
+        data: { user }
+    } =
+        await supabaseClient.auth.getUser();
 
     let budgetInput =
         document.getElementById(
             "budget"
         );
-
-    budgetInput.value =
-        budget === 0
-            ? ""
-            : budget;
 
     let budgetResult =
         document.getElementById(
@@ -236,6 +277,49 @@ function showBudget(
     if (!budgetResult) {
         return;
     }
+
+    if (!user) {
+        budgetInput.value = "";
+
+        budgetResult.textContent =
+            "ログインすると予算を表示できます";
+
+        return;
+    }
+
+    const {
+        data,
+        error
+    } =
+        await supabaseClient
+            .from("budgets")
+            .select("budget")
+            .eq("user_id", user.id)
+            .eq("year", selectedYear)
+            .eq("month", selectedMonth)
+            .maybeSingle();
+
+    if (error) {
+        console.log(
+            "予算読み込みエラー:",
+            error
+        );
+
+        budgetResult.textContent =
+            "予算の読み込みに失敗しました";
+
+        return;
+    }
+
+    let budget =
+        data
+            ? Number(data.budget)
+            : 0;
+
+    budgetInput.value =
+        budget === 0
+            ? ""
+            : budget;
 
     if (budget === 0) {
         budgetResult.textContent =
@@ -420,7 +504,7 @@ function updateChart(
 }
 
 
-function showSelectedMonth() {
+async function showSelectedMonth() {
     let monthText =
         selectedYear +
         "-" +
@@ -586,7 +670,7 @@ function showSelectedMonth() {
             .appendChild(p);
     }
 
-    showBudget(
+    await showBudget(
         monthExpense
     );
 
@@ -684,7 +768,7 @@ document
     )
     .addEventListener(
         "click",
-        function() {
+        async function() {
             selectedMonth--;
 
             if (
@@ -694,7 +778,7 @@ document
                 selectedYear--;
             }
 
-            showSelectedMonth();
+            await showSelectedMonth();
         }
     );
 
@@ -705,7 +789,7 @@ document
     )
     .addEventListener(
         "click",
-        function() {
+        async function() {
             selectedMonth++;
 
             if (
@@ -715,7 +799,7 @@ document
                 selectedYear++;
             }
 
-            showSelectedMonth();
+            await showSelectedMonth();
         }
     );
 
@@ -856,6 +940,6 @@ window.onload =
 
             await loadSupabaseRecords();
         } else {
-            showSelectedMonth();
+            await showSelectedMonth();
         }
     };
